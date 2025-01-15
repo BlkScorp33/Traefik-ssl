@@ -1,0 +1,48 @@
+http:
+
+### Router for external apps ###
+
+  routers:
+
+    memos:
+      rule: "Host(`memos.$MY_DOMAIN`)"
+      service: memos
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: myresolver
+
+    gitea:
+      rule: "Host(`gitea.$MY_DOMAIN`)"
+      service: gitea
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: myresolver
+
+    wireguard:
+      rule: "Host(`wire.$MY_DOMAIN`)"
+      service: wireguard
+      entryPoints:
+        - websecure
+      tls:
+         certResolver: myresolver
+
+### External services ###
+
+  services:
+
+    memos:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:5230"
+
+    gitea:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3099"
+
+    wireguard:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:51821"
