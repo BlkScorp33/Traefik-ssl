@@ -1,0 +1,48 @@
+---
+version: '3.5'
+services:
+  traefik:
+    image: "traefik:v3.3"
+    container_name: "traefik"
+    hostname: "traefik"
+    env_file:
+      - .env
+    networks:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" ##Used for Dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+#      - "./traefik-log:/var/traefik/log"
+      - "./traefik.yml:/traefik.yml:ro"
+      - "./acme.json:/acme.json"
+    #  - "./config:/config"
+    #  - "./user_credentials:/users_credentials:ro"
+    labels:
+      - "traefik.enable=true"
+      ## DNS CHALLENGE
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik.tls.domains[0].main=*.$MY_DOMAIN"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=$MY_DOMAIN"
+      ## HTTP REDIRECT
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.redirect-https.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirect-https.entrypoints=web"
+      - "traefik.http.routers.redirect-https.middlewares=redirect-to-https"
+      ## Dashboard
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.$MY_DOMAIN`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=myresolver"
+      ## Basic Auth (use either basic_auth or authentik)
+      - "traefik.http.routers.traefik-dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin-password"
+      ## Authentik
+      - "traefik.http.routers.traefik.middlewares=authentik@file"
+
+networks:
+  web:
+    driver: overlay
+#    external: true
